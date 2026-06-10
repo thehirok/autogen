@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{Top-12 meta-features by SHAP importance and Early Selection Score (ESS).}
+\label{tab:rq2}
+\small
+\begin{tabular}{rlrl}
+\toprule
+\multicolumn{2}{c}{SHAP Importance} & \multicolumn{2}{c}{ESS Score} \\
+\cmidrule(lr){1-2} \cmidrule(lr){3-4}
+Feature & |SHAP| & Feature & ESS \\
+\midrule
+median\_ratings\_per\_item & 0.0278 & rating\_entropy & 0.0011 \\
+avg\_ratings\_per\_item & 0.0276 & rating\_skew & 0.0006 \\
+max\_ratings\_per\_item & 0.0235 & rating\_mean & 0.0005 \\
+std\_ratings\_per\_item & 0.0211 & rating\_std & 0.0004 \\
+cold\_start\_user\_ratio & 0.0134 & rating\_median & 0.0004 \\
+std\_ratings\_per\_user & 0.0132 & rating\_range & 0.0004 \\
+user\_item\_ratio & 0.0127 & rating\_min & 0.0004 \\
+item\_popularity\_gini & 0.0127 & rating\_max & 0.0003 \\
+max\_ratings\_per\_user & 0.0123 & user\_item\_ratio & 0.0000 \\
+rating\_kurtosis & 0.0121 & n\_users & 0.0000 \\
+avg\_ratings\_per\_user & 0.0103 & sparsity & 0.0000 \\
+rating\_entropy & 0.0090 & n\_ratings & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}

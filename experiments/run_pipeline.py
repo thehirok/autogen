@@ -203,16 +203,16 @@ def main():
     python_exe = sys.executable
 
     print()
-    print("╔══════════════════════════════════════════════════════════════════╗")
-    print("║              AutoRecSys — Full Experiment Pipeline             ║")
-    print("╠══════════════════════════════════════════════════════════════════╣")
-    print(f"║  Datasets: {len(available):>2}                                                  ║")
-    print(f"║  Steps:     {len(STEPS)}                                                   ║")
-    print(f"║  Python:    {os.path.basename(python_exe):<50} ║")
-    print("╚══════════════════════════════════════════════════════════════════╝")
+    print("=" * 70)
+    print("  AutoRecSys -- Full Experiment Pipeline")
+    print("=" * 70)
+    print(f"  Datasets: {len(available)}")
+    print(f"  Steps:    {len(STEPS)}")
+    print(f"  Python:   {os.path.basename(python_exe)}")
+    print("=" * 70)
     print()
     for name, cfg in available.items():
-        print(f"  • {name}")
+        print(f"  - {name}")
     print()
 
     # Temporarily patch config.DATASETS so experiment scripts only use selected datasets
@@ -229,7 +229,7 @@ def main():
         ok = run_step(step, python_exe)
         if not ok:
             failed.append(step['name'])
-            # Steps 7, 8, 9 are independent — continue even if one fails
+            # Steps 7, 8, 9 are independent - continue even if one fails
             if i <= 6:
                 logger.error(f"Pipeline stopped at step {i}. "
                              f"Fix the error and re-run with --start-from={i}")
@@ -241,15 +241,15 @@ def main():
     print("=" * 70)
     print(f"  Pipeline finished in {format_time(total)}")
     if failed:
-        print(f"  ⚠ Failed steps: {', '.join(failed)}")
+        print(f"  [!] Failed steps: {', '.join(failed)}")
     else:
-        print("  ✓ All steps completed successfully!")
+        print("  [OK] All steps completed successfully!")
     print()
     print("  Outputs:")
-    print("    results/*.csv            — raw experimental data")
-    print("    data/meta/*.csv          — meta-learning dataset")
-    print("    paper/figures/*.pdf      — publication-ready figures")
-    print("    paper/tables/*.tex       — LaTeX tables")
+    print("    results/*.csv            - raw experimental data")
+    print("    data/meta/*.csv          - meta-learning dataset")
+    print("    paper/figures/*.pdf      - publication-ready figures")
+    print("    paper/tables/*.tex       - LaTeX tables")
     print("=" * 70)
 
 

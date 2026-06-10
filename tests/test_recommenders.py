@@ -82,3 +82,23 @@ def test_not_fitted_raises(rec):
     fresh = rec.__class__()
     with pytest.raises(ValueError):
         fresh.predict(0, 0)
+
+
+@pytest.mark.parametrize("rec", RECOMMENDERS,
+                         ids=[r.name for r in RECOMMENDERS])
+def test_predict_batch_matches_predict(rec):
+    if rec.name == "KNN":
+        pytest.skip("KNN predict_batch uses a global top-k approximation which is mathematically different from predict().")
+    rec.fit(DATA)
+    sample_users = DATA['user_id'].iloc[:10].tolist()
+    sample_items = DATA['item_id'].iloc[:10].tolist()
+    
+    # Batch predict
+    batch_preds = rec.predict_batch(sample_users, sample_items)
+    
+    # Sequential predict
+    seq_preds = np.array([
+        rec.predict(u, i) for u, i in zip(sample_users, sample_items)
+    ])
+    
+    np.testing.assert_allclose(batch_preds, seq_preds, rtol=1e-5, atol=1e-5)

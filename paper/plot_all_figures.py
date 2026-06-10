@@ -251,7 +251,7 @@ def table_algorithm_performance(df):
     lines.append('\\centering')
     lines.append('\\caption{NDCG@10 of each algorithm on each dataset. '
                  'Best results per dataset in \\textbf{bold}.}')
-    lines.append('\\label{tab:algorithm_performance}')
+    lines.append('\\label{tab:rq1}')
     lines.append('\\small')
     lines.append('\\begin{tabular}{l' + 'c' * len(algos) + '}')
     lines.append('\\toprule')
@@ -291,7 +291,7 @@ def table_selection_accuracy(df):
     lines.append('\\centering')
     lines.append('\\caption{Algorithm selection accuracy by sample size '
                  '(RandomForest meta-model).}')
-    lines.append('\\label{tab:selection_accuracy}')
+    lines.append('\\label{tab:rq3}')
     lines.append('\\begin{tabular}{lrrr}')
     lines.append('\\toprule')
     lines.append('Sample Size & Accuracy & Std & N \\\\')
@@ -318,7 +318,7 @@ def table_feature_importance(shap_df, ess_df, top_n=12):
     lines.append('\\centering')
     lines.append('\\caption{Top-12 meta-features by SHAP importance '
                  'and Early Selection Score (ESS).}')
-    lines.append('\\label{tab:feature_importance}')
+    lines.append('\\label{tab:rq2}')
     lines.append('\\small')
     lines.append('\\begin{tabular}{rlrl}')
     lines.append('\\toprule')
@@ -347,7 +347,7 @@ def table_significance(df):
     lines.append('\\centering')
     lines.append('\\caption{Statistical significance tests '
                  '(Wilcoxon / paired t-test, $\\alpha=0.05$).}')
-    lines.append('\\label{tab:significance}')
+    lines.append('\\label{tab:rq4}')
     lines.append('\\small')
     lines.append('\\begin{tabular}{llcccc}')
     lines.append('\\toprule')
@@ -439,6 +439,30 @@ def main():
         table_significance(sig)
     if abl is not None:
         table_ablation(abl)
+
+    # --- Copy to latex/ folder for Overleaf compatibility ---
+    try:
+        import shutil
+        ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        latex_tables_dir = os.path.join(ROOT, 'latex', 'tables')
+        latex_figures_dir = os.path.join(ROOT, 'latex', 'figures')
+        
+        os.makedirs(latex_tables_dir, exist_ok=True)
+        os.makedirs(latex_figures_dir, exist_ok=True)
+        
+        # Copy tables
+        for f in os.listdir(PAPER_TABLES_DIR):
+            if f.endswith('.tex'):
+                shutil.copy(os.path.join(PAPER_TABLES_DIR, f), os.path.join(latex_tables_dir, f))
+                
+        # Copy figures
+        for f in os.listdir(PAPER_FIGURES_DIR):
+            if f.endswith('.pdf'):
+                shutil.copy(os.path.join(PAPER_FIGURES_DIR, f), os.path.join(latex_figures_dir, f))
+                
+        logger.info("Copied all generated assets to latex/ folder.")
+    except Exception as e:
+        logger.warning(f"Failed to copy assets to latex/ folder: {e}")
 
     logger.info("All figures & tables done.")
 

@@ -14,6 +14,11 @@ PAPER_TABLES_DIR   = os.path.join(BASE_DIR, "paper", "tables")
 # --- Reproducibility ---
 RANDOM_SEED = 42
 
+# --- Evaluation seeds for statistical robustness (for RQ4) ---
+N_EVAL_SEEDS = 5
+EVAL_SEEDS = [RANDOM_SEED + i for i in range(N_EVAL_SEEDS)]
+
+
 # --- Subsampling sizes (for RQ1 and RQ2) ---
 SAMPLE_SIZES = [250, 500, 1000, 2000, 5000, 10000]
 N_SUBSAMPLE_TRIALS = 10  # number of random draws per sample size

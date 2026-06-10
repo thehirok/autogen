@@ -12,8 +12,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import logging
 
-from config import DATASETS, RESULTS_DIR, N_SUBSAMPLE_TRIALS
+from config import DATASETS, RESULTS_DIR, N_SUBSAMPLE_TRIALS, TEST_RATIO, RANDOM_SEED
 from src.stability_analyzer import StabilityAnalyzer
+from sklearn.model_selection import train_test_split
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,9 +38,12 @@ def main():
             if len(data) < ds_cfg.get('min_ratings', 0):
                 logger.warning(f"[{ds_name}] Too few ratings — skipping.")
                 continue
+            # Prevent data leakage: compute stability curves using only the train split
+            train, _ = train_test_split(
+                data, test_size=TEST_RATIO, random_state=RANDOM_SEED)
             # Fresh analyzer per dataset to avoid stale internal state
             analyzer = StabilityAnalyzer(n_trials=N_SUBSAMPLE_TRIALS)
-            curves = analyzer.compute_stability_curves(data, dataset_name=ds_name)
+            curves = analyzer.compute_stability_curves(train, dataset_name=ds_name)
             all_curves.append(curves)
             analyzer.summary()
         except Exception as e:

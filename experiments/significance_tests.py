@@ -69,31 +69,37 @@ def main():
     df = pd.read_csv(e2e_path)
 
     # focus on full-size conditions for cross-condition comparisons
-    full = df[df['sample_size'] == 'full']
+    full = df[df['sample_size'].astype(str) == 'full']
     conditions = full['condition'].unique().tolist()
     datasets   = full['dataset'].unique().tolist()
 
     records = []
 
-    # pairwise Wilcoxon signed-rank tests on RMSE across datasets
+    # pairwise Wilcoxon signed-rank tests on RMSE across datasets & seeds
     for c1, c2 in combinations(conditions, 2):
         rmse1, rmse2 = [], []
         for ds in datasets:
-            r1 = full[(full['condition'] == c1) &
-                      (full['dataset']   == ds)]['rmse'].values
-            r2 = full[(full['condition'] == c2) &
-                      (full['dataset']   == ds)]['rmse'].values
-            if len(r1) > 0 and len(r2) > 0:
-                rmse1.append(float(r1[0]))
-                rmse2.append(float(r2[0]))
+            for seed in df['seed'].dropna().unique():
+                r1 = full[(full['condition'] == c1) &
+                          (full['dataset']   == ds) &
+                          (full['seed']      == seed)]['rmse'].values
+                r2 = full[(full['condition'] == c2) &
+                          (full['dataset']   == ds) &
+                          (full['seed']      == seed)]['rmse'].values
+                if len(r1) > 0 and len(r2) > 0:
+                    val1 = float(r1[0])
+                    val2 = float(r2[0])
+                    if not np.isnan(val1) and not np.isnan(val2):
+                        rmse1.append(val1)
+                        rmse2.append(val2)
 
-        stat, p, n = wilcoxon_test(rmse1, rmse2)
+        stat, p, n_obs = wilcoxon_test(rmse1, rmse2)
         records.append({
             'condition_a':  c1,
             'condition_b':  c2,
             'metric':       'rmse',
             'test_type':    'wilcoxon',
-            'n_datasets':   n,
+            'n_observations': n_obs,
             'mean_a':       np.nanmean(rmse1) if rmse1 else np.nan,
             'mean_b':       np.nanmean(rmse2) if rmse2 else np.nan,
             'test_stat':    stat,
@@ -105,16 +111,30 @@ def main():
     early = df[df['condition'] == 'early_selection']
     full_sel = df[df['condition'] == 'full_selection']
 
-    for n in sorted([s for s in df['sample_size'].unique()
-                      if s not in ('full', 'full_selection') and not isinstance(s, str)]):
+    # Extract sample sizes that are numeric
+    sizes = []
+    for s in df['sample_size'].unique():
+        try:
+            if not pd.isna(s) and s != 'full':
+                sizes.append(int(float(s)))
+        except ValueError:
+            pass
+    
+    for n in sorted(list(set(sizes))):
         e_rmse, f_rmse = [], []
         for ds in datasets:
-            e = early[(early['sample_size'] == n) &
-                      (early['dataset'] == ds)]['rmse'].values
-            f = full_sel[full_sel['dataset'] == ds]['rmse'].values
-            if len(e) > 0 and len(f) > 0:
-                e_rmse.append(float(e[0]))
-                f_rmse.append(float(f[0]))
+            for seed in df['seed'].dropna().unique():
+                # Cast sample_size to float/int to check matching
+                e = early[(early['sample_size'].astype(float) == float(n)) &
+                          (early['dataset'] == ds) &
+                          (early['seed'] == seed)]['rmse'].values
+                f = full_sel[(full_sel['dataset'] == ds) &
+                             (full_sel['seed'] == seed)]['rmse'].values
+                if len(e) > 0 and len(f) > 0:
+                    mean_e = np.nanmean(e)
+                    if not np.isnan(mean_e) and not np.isnan(f[0]):
+                        e_rmse.append(mean_e)
+                        f_rmse.append(float(f[0]))
 
         t_stat, p, n_valid = paired_ttest(e_rmse, f_rmse)
         records.append({
@@ -122,7 +142,7 @@ def main():
             'condition_b':   'full_selection',
             'metric':        'rmse',
             'test_type':     'paired_ttest',
-            'n_datasets':    n_valid,
+            'n_observations': n_valid,
             'mean_a':        np.nanmean(e_rmse) if e_rmse else np.nan,
             'mean_b':        np.nanmean(f_rmse) if f_rmse else np.nan,
             'test_stat':     t_stat,
@@ -164,6 +184,7 @@ def main():
 
     print("\n--- Significance tests (with Holm–Bonferroni correction) ---")
     print(out_df[['condition_a', 'condition_b',
+                  'n_observations',
                   'mean_a', 'mean_b',
                   'test_stat', 'p_value', 'significant',
                   'p_value_corrected', 'significant_corrected']].to_string(index=False))

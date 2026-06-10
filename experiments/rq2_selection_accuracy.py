@@ -17,10 +17,11 @@ from tqdm import tqdm
 
 from config import (DATASETS, RESULTS_DIR, DATA_META_DIR,
                     SAMPLE_SIZES, N_SUBSAMPLE_TRIALS,
-                    RANDOM_SEED, META_MODELS)
+                    RANDOM_SEED, TEST_RATIO, META_MODELS)
 from src.early_selector     import EarlySelector
 from src.dataset_analyzer   import DatasetAnalyzer
 from src.subsampler         import Subsampler
+from sklearn.model_selection import train_test_split
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,9 +82,13 @@ def main():
             data = pd.read_parquet(ds_cfg['path'])
             data = data[['user_id', 'item_id', 'rating']].dropna()
 
+            # Prevent data leakage: perform selection strictly on the train split
+            train, _ = train_test_split(
+                data, test_size=TEST_RATIO, random_state=RANDOM_SEED)
+
             # full dataset selection
             try:
-                full_sel = selector.select(data)['algorithm']
+                full_sel = selector.select(train)['algorithm']
             except Exception as e:
                 logger.warning(f"[{test_ds}] Full selection failed: {e}")
                 full_sel = None
@@ -100,11 +105,11 @@ def main():
 
             # subsampled selection
             for n in SAMPLE_SIZES:
-                if n >= len(data):
+                if n >= len(train):
                     continue
                 for trial in range(N_SUBSAMPLE_TRIALS):
                     try:
-                        selected = selector.select_at_n(data, n, trial=trial)
+                        selected = selector.select_at_n(train, n, trial=trial)
                     except Exception as e:
                         logger.debug(
                             f"[{test_ds}] n={n} t={trial} failed: {e}")

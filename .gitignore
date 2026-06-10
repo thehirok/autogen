@@ -36,3 +36,6 @@ paper/tables/
 # System files
 .DS_Store
 Thumbs.db
+
+# Archive files
+latex.zip

@@ -105,7 +105,7 @@ def main():
             print(f"  {row['algorithm']:<10} {status}  "
                   f"fit={row['fit_time']}s  eval={row['eval_time']}s")
 
-    print(f"\nSaved → {out}")
+    print(f"\nSaved -> {out}")
 
 
 if __name__ == '__main__':

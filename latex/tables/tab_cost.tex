@@ -1,0 +1,26 @@
+\begin{table}[htbp]
+\centering
+\caption{Computational cost: Early Selection ($N\!=\!250$) vs.\ full evaluation (training all 6 algorithms). Speedup is the ratio of full training time to early selection time.}
+\label{tab:cost}
+\begin{tabular}{lrrr}
+\toprule
+Dataset & Early (s) & Full Train (s) & Speedup \\
+\midrule
+movielens\_100k & 0.14 & 250 & 1751$\times$ \\
+movielens\_1m & 0.35 & 1308 & 3780$\times$ \\
+movielens\_10m & 3.22 & 751 & 233$\times$ \\
+movielens\_20m & 6.23 & 597 & 96$\times$ \\
+amazon\_books & 2.50 & 157 & 63$\times$ \\
+amazon\_movies & 0.55 & 516 & 941$\times$ \\
+amazon\_electronics & 0.56 & 274 & 492$\times$ \\
+amazon\_CDs\_vinyl & 0.40 & 497 & 1239$\times$ \\
+amazon\_clothing & 0.16 & 344 & 2111$\times$ \\
+amazon\_home\_kitchen & 0.23 & 474 & 2098$\times$ \\
+amazon\_sports & 0.16 & 442 & 2693$\times$ \\
+filmtrust & 0.09 & 67 & 755$\times$ \\
+jester & 1.12 & 961 & 862$\times$ \\
+\midrule
+\textbf{Mean/Median} & \textbf{1.21} & \textbf{511} & \textbf{941$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -15,8 +15,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import logging
 
-from config import DATASETS, RESULTS_DIR, DATA_META_DIR
+from config import DATASETS, RESULTS_DIR, DATA_META_DIR, TEST_RATIO, RANDOM_SEED
 from src.dataset_analyzer import DatasetAnalyzer
+from sklearn.model_selection import train_test_split
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,12 +65,15 @@ def main():
         try:
             data = pd.read_parquet(path)
             data = data[['user_id', 'item_id', 'rating']].dropna()
-            analyzer.load_dataset(data)
+            # Prevent data leakage: extract meta-features only from the train split
+            train, _ = train_test_split(
+                data, test_size=TEST_RATIO, random_state=RANDOM_SEED)
+            analyzer.load_dataset(train)
             feats = analyzer.extract_features()
             feats['dataset']        = ds_name
             feats['best_algorithm'] = oracle[ds_name]
             feature_records.append(feats)
-            logger.info(f"[{ds_name}] Features extracted. "
+            logger.info(f"[{ds_name}] Features extracted from train split. "
                         f"Oracle={oracle[ds_name]}")
         except Exception as e:
             logger.error(f"[{ds_name}] Failed: {e}")

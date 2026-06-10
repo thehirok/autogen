@@ -79,6 +79,17 @@ class SVDppRecommender(BaseRecommender):
                                       - reg * self.Y[impl])
                 self.Y[impl] = np.clip(self.Y[impl] + y_update, -10, 10)
 
+        # Precompute combined user latent factors for fast predictions
+        self.P_impl = np.zeros((n_users, self.n_factors))
+        for u in range(n_users):
+            impl = self.user_implicit[u]
+            if len(impl) > 0:
+                norm = 1.0 / np.sqrt(len(impl))
+                ysum = np.sum(self.Y[impl], axis=0) * norm
+            else:
+                ysum = np.zeros(self.n_factors)
+            self.P_impl[u] = self.P[u] + ysum
+
         self.is_fitted = True
         return self
 
@@ -89,26 +100,47 @@ class SVDppRecommender(BaseRecommender):
             return self.global_mean
         u = self.user_mapping[user_id]
         i = self.item_mapping[item_id]
-        impl = self.user_implicit[u]
-        norm = 1.0 / np.sqrt(max(len(impl), 1))
-        ysum = np.sum(self.Y[impl], axis=0) * norm
         pred = (self.global_mean + self.bu[u] + self.bi[i]
-                + np.dot(self.Q[i], self.P[u] + ysum))
+                + np.dot(self.Q[i], self.P_impl[u]))
         return self._clip(pred)
 
     def predict_all_items(self, user_id):
         if user_id not in self.user_mapping:
             raise ValueError(f"User {user_id} not in training data.")
         u = self.user_mapping[user_id]
-        impl = self.user_implicit[u]
-        norm = 1.0 / np.sqrt(max(len(impl), 1))
-        ysum = np.sum(self.Y[impl], axis=0) * norm
-        # Q @ (P[u] + ysum) for all items at once
+        # Q @ P_impl[u] for all items at once
         scores = (self.global_mean
                   + self.bu[u]
                   + self.bi
-                  + self.Q @ (self.P[u] + ysum))
+                  + self.Q @ self.P_impl[u])
         return self._clip_array(scores)
+
+    def predict_batch(self, user_ids, item_ids):
+        user_ids = np.asarray(user_ids)
+        item_ids = np.asarray(item_ids)
+        preds = np.full(len(user_ids), self.global_mean, dtype=np.float64)
+
+        # Filter valid user/item pairs
+        valid_mask = np.array([
+            uid in self.user_mapping and iid in self.item_mapping
+            for uid, iid in zip(user_ids, item_ids)
+        ], dtype=bool)
+
+        if valid_mask.any():
+            v_user_ids = user_ids[valid_mask]
+            v_item_ids = item_ids[valid_mask]
+            u_idxs = np.array([self.user_mapping[uid] for uid in v_user_ids])
+            i_idxs = np.array([self.item_mapping[iid] for iid in v_item_ids])
+
+            # Vectorized dot products: sum over latent factors dimension
+            dot_products = np.einsum('ij,ij->i',
+                                     self.P_impl[u_idxs],
+                                     self.Q[i_idxs])
+            preds[valid_mask] = (self.global_mean
+                                 + self.bu[u_idxs]
+                                 + self.bi[i_idxs]
+                                 + dot_products)
+        return self._clip_array(preds)
 
 
     def get_hyperparameters(self):
