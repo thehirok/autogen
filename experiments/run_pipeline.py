@@ -55,47 +55,52 @@ PAPER_DIR = os.path.join(ROOT, 'paper')
 
 STEPS = [
     {
-        'name':   '1/9  Run all algorithms',
+        'name':   '1/10  Run all algorithms',
         'script': os.path.join(EXPERIMENTS_DIR, 'run_all_algorithms.py'),
         'desc':   'Train & evaluate every algorithm on every dataset',
     },
     {
-        'name':   '2/9  Build meta-dataset',
+        'name':   '2/10  Build meta-dataset',
         'script': os.path.join(EXPERIMENTS_DIR, 'build_meta_dataset.py'),
         'desc':   'Extract meta-features + oracle labels',
     },
     {
-        'name':   '3/9  RQ1 — Feature stability',
+        'name':   '3/10  RQ1 — Feature stability',
         'script': os.path.join(EXPERIMENTS_DIR, 'rq1_feature_stability.py'),
         'desc':   'Stability curves for each meta-feature',
     },
     {
-        'name':   '4/9  RQ2 — Selection accuracy',
+        'name':   '4/10  RQ2 — Selection accuracy',
         'script': os.path.join(EXPERIMENTS_DIR, 'rq2_selection_accuracy.py'),
         'desc':   'Leave-one-out selection accuracy at each sample size',
     },
     {
-        'name':   '5/9  RQ3 — Feature importance',
+        'name':   '5/10  RQ3 — Feature importance',
         'script': os.path.join(EXPERIMENTS_DIR, 'rq3_feature_importance.py'),
         'desc':   'SHAP values + ESS scores',
     },
     {
-        'name':   '6/9  RQ4 — End-to-end quality',
+        'name':   '6/10  RQ4 — End-to-end quality',
         'script': os.path.join(EXPERIMENTS_DIR, 'rq4_end_to_end_quality.py'),
         'desc':   'Compare early vs full vs oracle vs random selection',
     },
     {
-        'name':   '7/9  Significance tests',
+        'name':   '7/10  RQ5 — PEFT efficiency',
+        'script': os.path.join(EXPERIMENTS_DIR, 'rq5_peft_efficiency.py'),
+        'desc':   'NCF vs PEFT-NCF (LoRA) across sample sizes',
+    },
+    {
+        'name':   '8/10  Significance tests',
         'script': os.path.join(EXPERIMENTS_DIR, 'significance_tests.py'),
         'desc':   'Wilcoxon + paired t-tests across conditions',
     },
     {
-        'name':   '8/9  Meta-model ablation',
+        'name':   '9/10  Meta-model ablation',
         'script': os.path.join(EXPERIMENTS_DIR, 'ablation_meta_models.py'),
-        'desc':   'Compare RandomForest vs XGBoost vs MLP',
+        'desc':   'Compare RandomForest vs XGBoost vs MLP vs TransformerLoRA',
     },
     {
-        'name':   '9/9  Generate figures & tables',
+        'name':   '10/10  Generate figures & tables',
         'script': os.path.join(PAPER_DIR, 'plot_all_figures.py'),
         'desc':   'Publication-ready PDFs + LaTeX tables',
     },

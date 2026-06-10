@@ -6,7 +6,8 @@ from .stability_analyzer import StabilityAnalyzer
 from .early_selector   import EarlySelector
 from .recommenders     import (SVDRecommender, KNNRecommender,
                                NCFRecommender, NMFRecommender,
-                               SVDppRecommender, SlopeOneRecommender)
+                               SVDppRecommender, SlopeOneRecommender,
+                               PEFTNCFRecommender)
 
 RECOMMENDER_MAP = {
     'SVD':      SVDRecommender,
@@ -15,4 +16,5 @@ RECOMMENDER_MAP = {
     'NMF':      NMFRecommender,
     'SVDpp':    SVDppRecommender,
     'SlopeOne': SlopeOneRecommender,
-}
+    'PEFT_NCF': PEFTNCFRecommender,
+}

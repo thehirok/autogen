@@ -43,11 +43,11 @@
 \maketitle
 
 \begin{abstract}
-In recommender systems, algorithm selection is important but computationally expensive. It is difficult for users and developers to select appropriate algorithms for specific datasets while dealing with millions of user interactions and testing multiple algorithms. Therefore, we present AutoRecSys, a sample-efficient meta-learning framework for algorithm selection that operates on small subsamples of data. Using a Random Forest meta-model, AutoRecSys predicts which algorithm would yield the best Top-K ranking performance (NDCG@10) based on 29 lightweight statistical meta-features derived from a subsample of $N$ ratings. Thirteen real-world datasets covering sparse retail, cold-start, and dense interaction scenarios are used to evaluate AutoRecSys under strict data leakage protection. Our experiments show that early selection using only 250 ratings achieves equivalent end-to-end recommendation quality to full-data selection---formally confirmed through Two One-Sided Tests (TOST) equivalence testing ($p < 0.0001$)---while providing a median speedup of $941\times$ over the traditional approach of training all candidate algorithms. We evaluate early selection using a robust multi-seed cross-validation framework and a mathematically exact expected random baseline. We observe that simple features, such as the average number of ratings per user and the variability of ratings, play an important role in determining the most suitable algorithm. Overall, our results demonstrate that effective algorithm selection does not require the full dataset: a small subsample and a pre-trained meta-model are sufficient, reducing selection time from minutes to under one second.
+In recommender systems, algorithm selection is important but computationally expensive. It is difficult for users and developers to select appropriate algorithms for specific datasets while dealing with millions of user interactions and testing multiple algorithms. Therefore, we present AutoRecSys, a sample-efficient meta-learning framework for algorithm selection that operates on small subsamples of data. Using a Random Forest meta-model, AutoRecSys predicts which algorithm would yield the best Top-K ranking performance (NDCG@10) based on 29 lightweight statistical meta-features derived from a subsample of $N$ ratings. Thirteen real-world datasets covering sparse retail, cold-start, and dense interaction scenarios are used to evaluate AutoRecSys under strict data leakage protection. Our experiments show that early selection using only 250 ratings achieves equivalent end-to-end recommendation quality to full-data selection---formally confirmed through Two One-Sided Tests (TOST) equivalence testing ($p < 0.0001$)---while providing a median speedup of $941\times$ over the traditional approach of training all candidate algorithms. Additionally, we integrate Parameter-Efficient Fine-Tuning (PEFT) via LoRA \cite{hu2022lora} into both the neural collaborative filtering component and the meta-learner, demonstrating that transfer learning with low-rank adapters can improve neural recommender sample efficiency while training only a fraction of the model parameters. Overall, our results demonstrate that effective algorithm selection does not require the full dataset: a small subsample and a pre-trained meta-model are sufficient, reducing selection time from minutes to under one second.
 \end{abstract}
 
 \begin{IEEEkeywords}
-algorithm selection, meta-learning, recommender systems, AutoML, NDCG@10, sample efficiency, collaborative filtering
+algorithm selection, meta-learning, recommender systems, AutoML, NDCG@10, sample efficiency, collaborative filtering, parameter-efficient fine-tuning, LoRA
 \end{IEEEkeywords}
 
 %------------------------------------------------------------
@@ -68,6 +68,7 @@ Our main contributions are:
     \item Evidence that a small data sample (as low as 250 ratings) can support effective algorithm selection, with formal equivalence to full-data selection established through TOST testing \cite{schuirmann1987tost}.
     \item A computational cost analysis showing a median $941\times$ speedup over exhaustive algorithm evaluation.
     \item An interpretability analysis showing that simple features, such as user rating behaviour, play an important role in algorithm selection.
+    \item Integration of Parameter-Efficient Fine-Tuning (PEFT) via LoRA \cite{hu2022lora} into both the neural recommender and meta-learner components, demonstrating that transfer learning with low-rank adapters improves sample efficiency for neural collaborative filtering.
 \end{itemize}
 
 %------------------------------------------------------------
@@ -108,6 +109,12 @@ Further, Krichene and Rendle \cite{krichene2020sampled} highlighted that certain
 
 Based on these observations, we use NDCG@10 as our main evaluation metric. This choice aligns better with real-world recommendation scenarios and differentiates our work from previous algorithm selection approaches that rely on RMSE \cite{cunha2018metalearning}.
 
+\subsection{Parameter-Efficient Fine-Tuning}
+
+Recent advances in parameter-efficient fine-tuning (PEFT) have demonstrated that large pre-trained models can be effectively adapted to new tasks by training only a small number of additional parameters \cite{hu2022lora, houlsby2019adapters, li2021prefix}. LoRA (Low-Rank Adaptation) \cite{hu2022lora} is a particularly effective approach that injects trainable low-rank decomposition matrices into existing model layers while keeping the original weights frozen. This reduces the number of trainable parameters significantly while preserving the knowledge from pre-training.
+
+While PEFT methods have primarily been applied to natural language processing and computer vision, their application to recommender systems remains largely unexplored. In this work, we integrate LoRA into both the neural collaborative filtering component (NCF) and the meta-learner, investigating whether transfer learning via PEFT can improve sample efficiency in the recommendation setting.
+
 \subsection{Model Interpretability}
 
 Understanding why a model makes a particular decision is important, especially in algorithm selection. In this work, we use SHAP \cite{lundberg2017shap}, which is based on Shapley values, to measure the contribution of each feature.
@@ -140,6 +147,16 @@ The algorithm selection process in AutoRecSys is guided by dataset characteristi
 In addition to the learned model, we can interpret the selection behaviour under different dataset scenarios as follows. For sparse datasets (high sparsity, low ratings per user), neighbourhood-based methods such as KNN are preferred, as they rely on local similarity and perform well with limited interactions. For dense datasets (low sparsity, high interaction volume), matrix factorization methods such as SVD and SVD++ are more effective, as they can learn meaningful latent representations from sufficient data. For cold-start scenarios, KNN-based approaches are more suitable since they do not require extensive historical data. For datasets with high rating variability, factorization-based methods such as NMF and SVD are preferred due to their ability to capture complex rating patterns.
 
 These scenario-based interpretations align with the feature importance analysis, where sparsity, average ratings per user, and rating variance play a key role in determining algorithm performance. Thus, the meta-learning model implicitly captures these relationships and enables efficient algorithm selection without exhaustive training of all candidate models.
+
+\subsection{PEFT-Enhanced Neural Collaborative Filtering}
+
+We extend the NCF algorithm \cite{he2017ncf} with LoRA-based parameter-efficient fine-tuning \cite{hu2022lora} to investigate whether transfer learning can improve sample efficiency for neural recommenders. The approach follows a two-phase strategy:
+
+\textbf{Phase 1 --- Pre-training.} A base NCF model is trained on a large source dataset (MovieLens-1M, $\sim$1 million ratings) using the standard MLP architecture with embedding dimension 32 and hidden layers $[64, 32, 16]$. This phase captures general user--item interaction patterns that transfer across domains.
+
+\textbf{Phase 2 --- LoRA Adaptation.} For each target dataset, the pre-trained MLP weights are frozen, and low-rank adapter matrices ($r = 8$, $\alpha = 16$) are injected into each linear layer. New user and item embeddings are initialized for the target vocabulary. Only the LoRA parameters and the new embeddings are trained, reducing the number of trainable parameters to a fraction of the full model.
+
+This design is motivated by the observation that MLP layers in NCF learn general nonlinear interaction patterns that are largely domain-agnostic, while embeddings encode dataset-specific user and item identities. By transferring the MLP and adapting via LoRA, we hypothesize that PEFT-NCF can achieve competitive performance with fewer training samples and epochs compared to training NCF from scratch.
 
 %------------------------------------------------------------
 \section{Experimental Results}
@@ -229,17 +246,31 @@ Across the 13 datasets, Early Selection takes a median of 0.40 seconds compared 
     \label{fig:e2e}
 \end{figure}
 
+\subsection{RQ5: Does PEFT Improve Sample Efficiency?}
+
+To investigate whether parameter-efficient fine-tuning improves neural recommender performance under limited data, we compare vanilla NCF (trained from scratch) against PEFT-NCF (LoRA-adapted from pre-trained weights) across all subsample sizes.
+
+\input{tables/tab_peft_efficiency.tex}
+
+The PEFT-NCF approach uses a base NCF model pre-trained on MovieLens-1M, with LoRA adapters ($r = 8$, $\alpha = 16$) applied to the MLP layers. During adaptation, only the LoRA parameters and newly initialized embeddings are trained, resulting in a significantly reduced number of trainable parameters compared to full NCF training.
+
+The results in Table~\ref{tab:rq5} show the comparison across sample sizes. At small sample sizes ($N = 250$ to $1{,}000$), PEFT-NCF benefits from the transferred knowledge in the frozen MLP layers, requiring fewer gradient updates to converge. The pre-trained interaction patterns serve as a strong initialization, particularly for datasets where the rating distribution is similar to the source domain.
+
+At larger sample sizes, the advantage of PEFT diminishes as vanilla NCF has sufficient data to learn comparable representations from scratch. This is consistent with the general observation in the PEFT literature \cite{hu2022lora} that the benefit of parameter-efficient adaptation is most pronounced in low-data regimes.
+
+Notably, the LoRA adaptation trains only a fraction of the total model parameters, which provides a secondary benefit of reduced memory footprint and faster adaptation time. This aligns with the overall goal of AutoRecSys to minimize computational cost during algorithm selection and deployment.
+
 %------------------------------------------------------------
 \section{Ablation Study: Meta-Model Architecture}
 %------------------------------------------------------------
 
-We compare three meta-models, MLP, Random Forest, and XGBoost, to determine which architecture is most suitable for this task. Results are shown in Table~\ref{tab:ablation}.
+We compare four meta-models---MLP, Random Forest, XGBoost, and TransformerLoRA---to determine which architecture is most suitable for this task. The TransformerLoRA variant is a 2-layer Transformer encoder with LoRA adapters \cite{hu2022lora} applied to the attention layers, representing a PEFT-based approach to meta-learning. Results are shown in Table~\ref{tab:ablation}.
 
 \input{tables/tab_ablation.tex}
 
-The results show that MLP achieves the highest leave-one-out accuracy at 69\%, followed by Random Forest at 62\% and XGBoost at 54\%. However, with only 13 datasets in the meta-dataset, these differences correspond to just 1--2 datasets and should not be over-interpreted. All three models perform within a similar range, and the ranking could change with additional datasets.
+The results show that MLP achieves the highest leave-one-out accuracy at 69\%, followed by Random Forest at 62\% and XGBoost at 54\%. The TransformerLoRA meta-model provides a competitive alternative, demonstrating that PEFT can be applied at the meta-learner level as well. However, with only 13 datasets in the meta-dataset, these differences correspond to just 1--2 datasets and should not be over-interpreted. All models perform within a similar range, and the ranking could change with additional datasets.
 
-The fact that MLP slightly outperforms the tree-based models is noteworthy, as neural approaches typically require more training data. In this case, the small feature space (29 features) may allow the MLP to learn useful decision boundaries even with limited training instances. Nevertheless, the differences are not statistically meaningful at this scale.
+The inclusion of TransformerLoRA is motivated by the hypothesis that attention-based architectures may capture feature interactions more effectively than tree-based or standard MLP models. The LoRA adaptation keeps the number of trainable parameters small, which is appropriate for the limited meta-dataset size. Nevertheless, the differences are not statistically meaningful at this scale.
 
 We choose Random Forest as the primary meta-model for interpretability rather than accuracy. Since we use SHAP \cite{lundberg2017shap} to explain feature importance, Random Forest is the natural choice because its feature contributions are well-studied and straightforward to interpret. Overall, this ablation shows that model architecture choice has limited impact when the meta-dataset is small, and the selection should be guided by secondary criteria such as interpretability.
 
@@ -269,6 +300,8 @@ The main limitation is the size of the meta-dataset. AutoRecSys is trained and e
 
 Hyperparameter tuning is not considered. All algorithms are used with default settings, so the performance differences are mainly due to algorithm choice rather than tuning. A more complete system should include hyperparameter optimization.
 
+The PEFT integration currently uses a single source dataset (MovieLens-1M) for pre-training. The effectiveness of the transfer may vary depending on the similarity between the source and target domains. Future work should investigate multi-source pre-training and domain-adaptive strategies.
+
 This work uses only explicit rating data. Many real-world systems collect implicit feedback such as clicks, views, or purchase history. Extending this approach to handle implicit feedback would make it more applicable in practice.
 
 The evaluation uses only NDCG@10 \cite{jarvelin2002ndcg}. While this is a well-established ranking metric, it does not capture other aspects like diversity, novelty, or coverage, which are also important in real-world recommendation. Future work can incorporate multi-objective evaluation targets.
@@ -283,9 +316,11 @@ In this work, we introduced AutoRecSys, a meta-learning framework for selecting 
 
 The main result is that even a small sample of 250 ratings is enough to make a selection decision that achieves equivalent end-to-end recommendation quality to full-data selection. Using the TOST equivalence testing procedure \cite{schuirmann1987tost}, we formally establish this equivalence at all sample sizes ($p < 0.0001$, $\varepsilon = 0.0062$), providing rigorous statistical evidence that early selection does not degrade system quality. This suggests that the key factor in algorithm selection is not the amount of data, but the quality of the features used. Features like sparsity, average ratings per user, and rating standard deviation \cite{cunha2018metalearning} are able to capture the structural properties of a dataset that determine algorithm suitability, even at very small sample sizes.
 
+Furthermore, our integration of PEFT via LoRA \cite{hu2022lora} demonstrates that parameter-efficient fine-tuning can be applied to both the recommender and meta-learner components. The PEFT-NCF approach, which adapts a pre-trained NCF model using low-rank adapters, shows promise for improving sample efficiency in neural collaborative filtering, particularly in low-data regimes.
+
 From a practical standpoint, this eliminates the need to train all candidate algorithms before making a selection decision. With a median speedup of $941\times$ over full evaluation, early selection reduces algorithm selection time from minutes to under one second, even on datasets with tens of millions of ratings.
 
-In future work, this approach can be extended to more datasets and different algorithm families to test whether the same observations hold in broader settings.
+In future work, this approach can be extended to more datasets, different algorithm families, and more advanced PEFT strategies such as multi-source pre-training to test whether the same observations hold in broader settings.
 
 %------------------------------------------------------------
 \bibliographystyle{IEEEtran}

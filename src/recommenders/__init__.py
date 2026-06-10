@@ -4,6 +4,7 @@ from .ncf       import NCFRecommender
 from .nmf       import NMFRecommender
 from .svdpp     import SVDppRecommender
 from .slopeone  import SlopeOneRecommender
+from .peft_ncf  import PEFTNCFRecommender
 
 __all__ = [
     "SVDRecommender",
@@ -12,4 +13,5 @@ __all__ = [
     "NMFRecommender",
     "SVDppRecommender",
     "SlopeOneRecommender",
+    "PEFTNCFRecommender",
 ]

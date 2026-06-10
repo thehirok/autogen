@@ -27,14 +27,14 @@ N_SUBSAMPLE_TRIALS = 10  # number of random draws per sample size
 STABILITY_TOLERANCE = 0.05  # feature must stay within ±5% of full-data value
 
 # --- Algorithms to evaluate ---
-ALGORITHMS = ["SVD", "KNN", "NMF", "NCF", "SlopeOne", "SVDpp"]
+ALGORITHMS = ["SVD", "KNN", "NMF", "NCF", "SlopeOne", "SVDpp", "PEFT_NCF"]
 
 # --- Evaluation ---
 TEST_RATIO  = 0.2
 K_VALUES    = [5, 10, 20]
 
 # --- Meta-model architectures to compare ---
-META_MODELS = ["RandomForest", "XGBoost", "MLP"]
+META_MODELS = ["RandomForest", "XGBoost", "MLP", "TransformerLoRA"]
 
 # --- Dataset registry ---
 # Add each dataset here as you download it.
@@ -93,6 +93,13 @@ DATASETS = {
         "min_ratings": 10000,
     },
 }
+
+# --- PEFT (LoRA) configuration ---
+PEFT_SOURCE_DATASET = "movielens_1m"   # source dataset for NCF pre-training
+PEFT_LORA_R         = 8                # LoRA rank
+PEFT_LORA_ALPHA     = 16               # LoRA scaling factor
+PEFT_PRETRAIN_EPOCHS = 15              # epochs for pre-training base NCF
+PEFT_ADAPT_EPOCHS   = 5                # epochs for LoRA adaptation
 
 # --- Figure settings (ACM two-column format) ---
 FIGURE_DPI = 300

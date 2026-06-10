@@ -49,6 +49,14 @@ class HyperparameterOptimizer:
                 'n_factors': trial.suggest_int('n_factors', 10, 50),
                 'n_epochs':  trial.suggest_int('n_epochs', 10, 30),
             }
+        elif name == 'PEFTNCFRecommender':
+            return {
+                'lora_r':        trial.suggest_int('lora_r', 4, 16),
+                'lora_alpha':    trial.suggest_int('lora_alpha', 8, 32),
+                'adapt_epochs':  trial.suggest_int('adapt_epochs', 3, 10),
+                'learning_rate': trial.suggest_float(
+                    'learning_rate', 1e-4, 1e-2, log=True),
+            }
         else:
             return {}
 
